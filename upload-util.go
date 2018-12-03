@@ -10,18 +10,22 @@ import (
 )
 
 var (
-	client    *minio.Client
-	endpoint  string
-	accessKey string
-	secretKey string
+	client           *minio.Client
+	uploadEndpoint   string
+	downloadEndpoint string
+	accessKey        string
+	secretKey        string
 )
 
-func InitClient() *minio.Client {
-	endpoint = os.Getenv("MINIO_HOST")
+type UploadUtil struct{}
+
+func (uploadUtil *UploadUtil) InitClient() *minio.Client {
+	uploadEndpoint = os.Getenv("MINIO_UPLOAD_HOST")
+	downloadEndpoint = os.Getenv("MINIO_DOWNLOAD_HOST")
 	accessKey = os.Getenv("MINIO_ACCESS_KEY")
 	secretKey = os.Getenv("MINIO_SECRET_KEY")
 
-	minioClient, err := minio.New(endpoint, accessKey, secretKey, false)
+	minioClient, err := minio.New(uploadEndpoint, accessKey, secretKey, false)
 	if err != nil {
 		logger.Error("init minio connection with err = ", err)
 	}
@@ -29,17 +33,17 @@ func InitClient() *minio.Client {
 	return minioClient
 }
 
-func GetClientInstance() (client *minio.Client) {
+func (uploadUtil *UploadUtil) GetClientInstance() (client *minio.Client) {
 	return
 }
 
-func UploadFile(filePath string) string {
+func (uploadUtil *UploadUtil) UploadFile(filePath string) string {
 	//fileName := "质检结果报表数据_20181127220427.xlsx"
 	//filePath := "./质检结果报表数据_20181127220427.xlsx"
 	//contentType := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
-	fileName := getFileNameByPath(filePath)
+	fileName := uploadUtil.getFileNameByPath(filePath)
 
 	objectPrefix := os.Getenv("MINIO_OBJECT_PREFIX")
 	objectName := fmt.Sprintf("%s/%s", objectPrefix, fileName)
@@ -56,10 +60,11 @@ func UploadFile(filePath string) string {
 	// 上传成功或失败后均删除文件.
 	go os.Remove(filePath)
 
-	return fmt.Sprintf("http://%s/%s/%s", endpoint, bucketName, objectName)
+	// 返回文件下载链接.
+	return fmt.Sprintf("http://%s/%s/%s", downloadEndpoint, bucketName, objectName)
 }
 
-func getFileNameByPath(filePath string) string {
+func (uploadUtil *UploadUtil) getFileNameByPath(filePath string) string {
 	strings.LastIndex(filePath, ".")
 
 	f, err := os.Stat(filePath)
