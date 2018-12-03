@@ -100,7 +100,7 @@ func GenerateExcel(ei *ExcelInfo) string {
 		}
 
 		startRowIndex := -1
-		if sheet.NeedTitle != nil && *sheet.NeedTitle {
+		if sheet.NeedTitle == nil || (sheet.NeedTitle != nil && *sheet.NeedTitle) { // 默认有表格名称.
 			// 设置表格名称.
 			xlsx.SetCellValue(sheetName, "A1", *sheet.Title)
 
